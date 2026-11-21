@@ -1,0 +1,12 @@
+{
+  "postgres_outage": "PASS",
+  "minio_outage": "PASS",
+  "worker_sigkill_recovery": {
+    "status": "PASS",
+    "batch_id": "ea2a1f33-3fc6-48a6-a3d4-6f9769322155",
+    "documents": 40,
+    "active_claims_before_kill": 6,
+    "lease_clock_advanced_in_test": true,
+    "preserved_completed_attempts": true
+  }
+}

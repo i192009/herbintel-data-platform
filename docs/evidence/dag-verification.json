@@ -1,0 +1,32 @@
+{
+  "herbintel_data_quality": {
+    "state": "success",
+    "run_id": "verification__fc6c9476d9ea46cb939216766609f223",
+    "start_date": "2026-11-21T15:22:16.052601+00:00",
+    "end_date": "2026-11-21T15:22:22.180610+00:00",
+    "execution_seconds": 6.128
+  },
+  "herbintel_training_dataset_export": {
+    "state": "success",
+    "run_id": "verification__0b27ce6da3a6461ea29feb48c932b965",
+    "start_date": "2026-11-21T15:22:30.893280+00:00",
+    "end_date": "2026-11-21T15:22:33.396863+00:00",
+    "execution_seconds": 2.504
+  },
+  "herbintel_incremental_etl": {
+    "state": "success",
+    "run_id": "verification__da44bd986a9e49f4a4529a95cdf50f5a",
+    "start_date": "2026-11-21T15:22:42.374906+00:00",
+    "end_date": "2026-11-21T15:22:52.506681+00:00",
+    "execution_seconds": 10.132
+  },
+  "herbintel_historical_backfill": {
+    "state": "success",
+    "run_id": "verification__5c7d43833e56446798590c6ed156e256",
+    "start_date": "2026-11-21T15:23:01.030153+00:00",
+    "end_date": "2026-11-21T15:23:09.851273+00:00",
+    "execution_seconds": 8.821
+  },
+  "prior_versions_preserved": true,
+  "warehouse_loading": "NOT_RUN_NO_CREDENTIALS"
+}

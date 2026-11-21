@@ -1,0 +1,160 @@
+version: 2
+models:
+- name: int_approved_documents
+  description: Approved reference documents passing the extraction quality threshold.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: int_deduplicated_documents
+  description: Int deduplicated documents.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: int_document_quality
+  description: Int document quality.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: int_document_versions
+  description: Incremental MERGE with a three-day arrival-clock lookback for late
+    source events.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: int_processing_statistics
+  description: Int processing statistics.
+  columns: []
+- name: fct_dataset_versions
+  description: Fct dataset versions.
+  columns: []
+- name: fct_document_processing
+  description: Fct document processing.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: fct_training_documents
+  description: Deduplicated approved training candidates. Does not establish clinical
+    correctness.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: mart_dataset_readiness
+  description: Mart dataset readiness.
+  columns: []
+- name: mart_document_quality
+  description: Mart document quality.
+  columns: []
+- name: mart_language_distribution
+  description: Mart language distribution.
+  columns: []
+- name: mart_pipeline_performance
+  description: Mart pipeline performance.
+  columns: []
+- name: mart_training_dataset_summary
+  description: Mart training dataset summary.
+  columns: []
+- name: stg_dataset_manifests
+  description: Stg dataset manifests.
+  columns:
+  - name: manifest_id
+    description: SHA-256 of the canonical warehouse manifest envelope.
+    tests:
+    - not_null
+    - unique
+- name: stg_documents
+  description: Latest warehouse arrival for every tenant-scoped immutable source and
+    pipeline version.
+  columns:
+  - name: document_id
+    description: Immutable organization/source/file-checksum derived identifier.
+    tests:
+    - not_null
+  - name: org_id
+    description: Organization owning the source reference.
+    tests:
+    - not_null
+  - name: pipeline_version
+    description: Extraction revision; previous revisions remain available.
+    tests:
+    - not_null
+- name: stg_extraction_results
+  description: Stg extraction results.
+  columns:
+  - name: document_id
+    description: Document version being extracted.
+    tests:
+    - not_null
+    - relationships:
+        arguments:
+          to: ref('stg_documents')
+          field: document_id
+  - name: processing_status
+    description: Successfully extracted rows only; failures remain operational.
+    tests:
+    - accepted_values:
+        arguments:
+          values:
+          - completed
+- name: stg_processing_runs
+  description: Stg processing runs.
+  columns: []

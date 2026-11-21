@@ -1,0 +1,1 @@
+{"Rules":[{"ID":"expire-noncurrent-versions","Status":"Enabled","Filter":{"Prefix":""},"NoncurrentVersionExpiration":{"NoncurrentDays":90}},{"ID":"quarantine-retention","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":30}}]}

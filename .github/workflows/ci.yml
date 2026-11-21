@@ -1,0 +1,68 @@
+name: Local platform checks
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    defaults:
+      run: {working-directory: services/ingestion-go}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.26.10', cache-dependency-path: services/ingestion-go/go.sum}
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race -cover ./...
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12.16'}
+      - run: pip install -r services/processing-python/requirements.lock
+      - run: ruff check .
+      - run: mypy
+      - run: pytest -m 'not integration and not cloud' --junitxml=artifacts/python-tests.xml
+      - run: dbt deps --project-dir dbt/herbintel --profiles-dir dbt/herbintel
+      - run: dbt parse --project-dir dbt/herbintel --profiles-dir dbt/herbintel
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: python-and-dbt, path: 'artifacts/'}
+  compose-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - run: mkdir -p artifacts datasets/generated && chmod 777 artifacts datasets/generated
+      - run: docker compose up -d --build
+      - name: Wait for actual Airflow scheduler
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:8081/health | python3 -c 'import json,sys; assert json.load(sys.stdin)["scheduler"]["status"]=="healthy"'; then exit 0; fi
+            sleep 3
+          done
+          exit 1
+      - run: docker compose run --rm --no-deps airflow-init python -m unittest discover -s /opt/airflow/tests -v
+      - run: python3 scripts/manage.py test-integration
+      - run: python3 scripts/manage.py benchmark
+      - run: python3 scripts/manage.py failure-tests
+      - run: python3 scripts/manage.py verify-dags
+      - run: docker compose logs --no-color > artifacts/compose.log
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: actual-acceptance-results, path: artifacts/}
+      - run: docker compose down
+        if: always()
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pip-audit==2.9.0
+      - run: pip-audit -r services/processing-python/requirements.lock --format json --output dependency-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: dependency-audit, path: dependency-audit.json}

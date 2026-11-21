@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "engine": "PostgreSQL",
+  "checks": [
+    "final schema initialization",
+    "valid batch/document/result transaction",
+    "idempotency uniqueness",
+    "status constraint",
+    "result foreign key",
+    "logical source/checksum uniqueness",
+    "eight operational tables"
+  ],
+  "acceptance_scope": "database only; Go, MinIO, Airflow and warehouse are not exercised"
+}

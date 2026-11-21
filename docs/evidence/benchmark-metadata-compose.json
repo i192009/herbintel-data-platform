@@ -1,0 +1,19 @@
+{
+  "benchmark_type": "metadata_only_admission",
+  "records": 90000,
+  "batches": 90,
+  "fully_processed_pdfs": 0,
+  "concurrency": 4,
+  "elapsed_seconds": 6.3283,
+  "records_per_second": 14221.89,
+  "batch_latency_p50_seconds": 0.24408779800000957,
+  "batch_latency_p95_seconds": 0.35384459699997706,
+  "client_peak_traced_allocation_bytes": 1477429,
+  "client_cpu_seconds": 3.2195218000000003,
+  "ingestion_server_cpu_seconds": 2.29,
+  "ingestion_server_peak_sampled_rss_bytes": 40787968.0,
+  "server_resource_samples": 27,
+  "measurement_scope": "HTTP admission, MinIO raw write and PostgreSQL commit; client CPU/traced allocations; Go process CPU delta and RSS sampled through actual Prometheus process metrics",
+  "seed": 42,
+  "run_id": "a38ae39c7da34f60a98b08b8e6ecc94d"
+}

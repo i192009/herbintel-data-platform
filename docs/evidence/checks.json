@@ -1,0 +1,58 @@
+{
+  "verification_date": "2026-11-21",
+  "go_format_vet_race_postgres": "PASS",
+  "airflow_dag_parse_and_cycles": {
+    "status": "PASS",
+    "dags": 6
+  },
+  "dbt_parse": {
+    "status": "PASS",
+    "core": "1.12.7",
+    "adapter": "1.12.5"
+  },
+  "ruff": "PASS",
+  "mypy": {
+    "status": "PASS",
+    "processing_modules": 12
+  },
+  "cloud": "NOT_RUN_NO_CREDENTIALS",
+  "remote_github_workflows": "NOT_RUN",
+  "python_tests": {
+    "tests": 17,
+    "failures": 0,
+    "errors": 0
+  },
+  "python_dependency_audit": {
+    "vulnerabilities": 0
+  },
+  "health": {
+    "ingestion": {
+      "status": "ready"
+    },
+    "worker": {
+      "status": "ok"
+    },
+    "airflow": {
+      "dag_processor": {
+        "latest_dag_processor_heartbeat": null,
+        "status": null
+      },
+      "metadatabase": {
+        "status": "healthy"
+      },
+      "scheduler": {
+        "latest_scheduler_heartbeat": "2026-11-21T15:30:35.200606+00:00",
+        "status": "healthy"
+      },
+      "triggerer": {
+        "latest_triggerer_heartbeat": null,
+        "status": null
+      }
+    },
+    "grafana": {
+      "database": "ok",
+      "version": "13.3.1",
+      "commit": "da3aa3ff574e7dbbf808c66b6daa744defed0441"
+    }
+  }
+}

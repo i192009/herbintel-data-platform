@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "batch_id": "f011a2df-a4c1-463d-92ad-f6eeadb9c4c0",
+  "submitted_file_records": 1000,
+  "unique_file_versions": 999,
+  "completed_files": 998,
+  "quarantined_files": 1,
+  "dataset_rows": 994,
+  "dataset_version": "88c43e876eb589db7107",
+  "airflow_run_id": null,
+  "snowflake": "NOT_RUN_NO_CREDENTIALS",
+  "elapsed_seconds": 136.403,
+  "pipeline_version": "v1"
+}

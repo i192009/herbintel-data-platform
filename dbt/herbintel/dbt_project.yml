@@ -1,0 +1,14 @@
+name: herbintel
+version: '1.0.0'
+config-version: 2
+profile: herbintel
+model-paths: [models]
+snapshot-paths: [snapshots]
+test-paths: [tests]
+macro-paths: [macros]
+clean-targets: [target, dbt_packages]
+models:
+  herbintel:
+    staging: {+schema: STAGING, +materialized: view}
+    intermediate: {+schema: INTERMEDIATE, +materialized: view}
+    marts: {+schema: MARTS, +materialized: table}

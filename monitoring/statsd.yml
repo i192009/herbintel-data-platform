@@ -1,0 +1,6 @@
+mappings:
+  - match: airflow.ti_failures
+    name: herbintel_airflow_failures_total
+  - match: airflow.dagrun.duration.failed.*
+    name: herbintel_airflow_failed_dag_duration_seconds
+    labels: {dag_id: '$1'}

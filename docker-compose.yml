@@ -1,0 +1,197 @@
+name: herbintel
+x-worker-env: &worker-env
+  DATABASE_URL: postgresql://herb_worker:${WORKER_DB_PASSWORD:-local-worker-change-me}@postgres:5432/herbintel
+  S3_ENDPOINT_URL: http://minio:9000
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-herb-service}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-local-object-service-change-me}
+  S3_BUCKET: herbintel-data
+  WORKER_API_KEY: ${WORKER_API_KEY:-local-internal-service-key}
+  WORKER_ORG: demo
+  API_KEY: ${API_KEY:-local-demo-write-key}
+  INGEST_URL: http://ingestion:8080
+  WORKER_URL: http://worker:8000
+  AIRFLOW_URL: http://airflow-web:8080
+  AIRFLOW_USERNAME: ${AIRFLOW_USERNAME:-admin}
+  AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-local-airflow-change-me}
+  SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:-}
+  SNOWFLAKE_USER: ${SNOWFLAKE_USER:-}
+  SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD:-}
+  SNOWFLAKE_AUTHENTICATOR: ${SNOWFLAKE_AUTHENTICATOR:-snowflake}
+  SNOWFLAKE_PRIVATE_KEY_FILE: ${SNOWFLAKE_PRIVATE_KEY_FILE:-}
+  SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${SNOWFLAKE_PRIVATE_KEY_PASSPHRASE:-}
+  SNOWFLAKE_ROLE: ${SNOWFLAKE_ROLE:-HERBINTEL_LOADER}
+  SNOWFLAKE_DBT_ROLE: ${SNOWFLAKE_DBT_ROLE:-HERBINTEL_TRANSFORMER}
+  SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE:-HERBINTEL_WH}
+  SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE:-HERBINTEL}
+  SNOWFLAKE_SCHEMA: RAW
+  SNOWFLAKE_LOAD_STRATEGY: ${SNOWFLAKE_LOAD_STRATEGY:-copy}
+  AWS_BUCKET: ${AWS_BUCKET:-}
+  AWS_REGION: ${AWS_REGION:-us-east-1}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+x-airflow: &airflow
+  image: herbintel-airflow:local
+  build:
+    context: .
+    dockerfile: airflow/Dockerfile
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-local-admin-change-me}@postgres:5432/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-WX42v53ZjbXdSGe0jKYOr2RQq_xR_D2R6g0_n5H2lbg=}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-local-airflow-web-secret-change-me}
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__PARALLELISM: '4'
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: '2'
+    AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+    AIRFLOW__METRICS__TIMER_UNIT_CONSISTENCY: 'true'
+    AIRFLOW__METRICS__STATSD_ON: "true"
+    AIRFLOW__METRICS__STATSD_HOST: statsd
+    AIRFLOW__METRICS__STATSD_PORT: "9125"
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    WORKER_URL: http://worker:8000
+    WORKER_API_KEY: ${WORKER_API_KEY:-local-internal-service-key}
+    WORKER_ORG: demo
+    AIRFLOW_USERNAME: ${AIRFLOW_USERNAME:-admin}
+    AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-local-airflow-change-me}
+  volumes:
+    - airflow-logs:/opt/airflow/logs
+  depends_on:
+    postgres: {condition: service_healthy}
+services:
+  postgres:
+    image: postgres:16.9-bookworm
+    environment:
+      POSTGRES_DB: herbintel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-admin-change-me}
+      INGEST_DB_PASSWORD: ${INGEST_DB_PASSWORD:-local-ingest-change-me}
+      WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD:-local-worker-change-me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./storage/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U postgres -d herbintel']
+      interval: 3s
+      retries: 30
+    ports: ['127.0.0.1:5432:5432']
+  minio:
+    image: herbintel-minio:local
+    build:
+      context: .
+      dockerfile: storage/Dockerfile.minio
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-herb-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-local-minio-admin-change-me}
+    ports: ['127.0.0.1:9000:9000', '127.0.0.1:9001:9001']
+    volumes: [minio-data:/data]
+  storage-init:
+    image: herbintel-mc:local
+    build:
+      context: .
+      dockerfile: storage/Dockerfile.mc
+    entrypoint: [/bin/sh, /init/init.sh]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-herb-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-local-minio-admin-change-me}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-herb-service}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-local-object-service-change-me}
+    volumes: ['./storage:/init:ro']
+    depends_on: [minio]
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion-go/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://herb_ingest:${INGEST_DB_PASSWORD:-local-ingest-change-me}@postgres:5432/herbintel
+      S3_ENDPOINT: minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-herb-service}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-local-object-service-change-me}
+      API_KEYS: '${API_KEYS:-{"local-demo-write-key":{"org":"demo","scopes":["read","write"]},"local-other-key":{"org":"other","scopes":["read","write"]},"local-read-key":{"org":"demo","scopes":["read"]}}}'
+    ports: ['127.0.0.1:${INGEST_PORT:-18080}:8080']
+    depends_on:
+      postgres: {condition: service_healthy}
+      storage-init: {condition: service_completed_successfully}
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    pids_limit: 256
+  worker:
+    image: herbintel-worker:local
+    build:
+      context: .
+      dockerfile: services/processing-python/Dockerfile
+    environment: *worker-env
+    ports: ['127.0.0.1:8000:8000']
+    volumes: ['./artifacts:/app/artifacts', './datasets/generated:/app/datasets/generated']
+    depends_on:
+      postgres: {condition: service_healthy}
+      storage-init: {condition: service_completed_successfully}
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    pids_limit: 256
+  airflow-init:
+    <<: *airflow
+    command: ['bash','-c','airflow db migrate && (airflow users create --username "$${AIRFLOW_USERNAME}" --password "$${AIRFLOW_PASSWORD}" --firstname Local --lastname Operator --role Admin --email local@example.invalid || airflow users list)']
+  airflow-web:
+    <<: *airflow
+    command: webserver
+    ports: ['127.0.0.1:8081:8080']
+    depends_on:
+      airflow-init: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, curl, --fail, http://localhost:8080/health]
+      interval: 10s
+      retries: 30
+  airflow-scheduler:
+    <<: *airflow
+    command: scheduler
+    depends_on:
+      airflow-init: {condition: service_completed_successfully}
+  statsd:
+    image: prom/statsd-exporter:v0.28.0
+    command: ["--statsd.mapping-config=/etc/statsd/mapping.yml"]
+    volumes: ["./monitoring/statsd.yml:/etc/statsd/mapping.yml:ro"]
+  prometheus:
+    image: prom/prometheus:v3.13.5
+    command: ['--config.file=/etc/prometheus/prometheus.yml','--storage.tsdb.retention.time=15d']
+    volumes: ['./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro', './monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro']
+    ports: ['127.0.0.1:${PROMETHEUS_PORT:-19090}:9090']
+  grafana:
+    image: grafana/grafana:13.3.1
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: local-grafana-change-me
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+    ports: ['127.0.0.1:${GRAFANA_PORT:-13000}:3000']
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+  go-check:
+    image: golang:1.26.10-bookworm
+    profiles: [tools]
+    working_dir: /src/services/ingestion-go
+    volumes: ['.:/src', 'go-cache:/go']
+    command: ['sh','-c','go mod download && test -z "$$(gofmt -l .)" && go vet ./... && go test -race ./...']
+  dbt:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: dbt/Dockerfile
+    env_file: [.env]
+    environment:
+      DBT_PROFILES_DIR: /app/dbt/herbintel
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:-offline}
+      SNOWFLAKE_USER: ${SNOWFLAKE_USER:-offline}
+      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD:-offline}
+    volumes: ['./dbt/herbintel:/app/dbt/herbintel']
+volumes:
+  postgres-data:
+  minio-data:
+  airflow-logs:
+  grafana-data:
+  go-cache:

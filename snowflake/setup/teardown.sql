@@ -1,0 +1,8 @@
+-- Destructive, explicit operator command only. Preserve/export data before execution.
+DROP DATABASE IF EXISTS HERBINTEL;
+DROP WAREHOUSE IF EXISTS HERBINTEL_WH;
+DROP STORAGE INTEGRATION IF EXISTS HERBINTEL_S3_ACCESS;
+DROP ROLE IF EXISTS HERBINTEL_READER;
+DROP ROLE IF EXISTS HERBINTEL_TRANSFORMER;
+DROP ROLE IF EXISTS HERBINTEL_LOADER;
+-- Separately remove AWS S3 notifications, IAM role/policy and retained S3 objects as appropriate.

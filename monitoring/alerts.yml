@@ -1,0 +1,12 @@
+groups:
+  - name: herbintel
+    rules:
+      - alert: HerbIntelServiceDown
+        expr: up{job=~"ingestion|worker"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'HerbIntel service unavailable'}
+      - alert: QualityGateFailed
+        expr: increase(herbintel_quality_violations_total[5m]) > 0
+        labels: {severity: critical}
+        annotations: {summary: 'Dataset publication blocked by quality gate'}

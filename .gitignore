@@ -1,0 +1,15 @@
+.env
+.venv/
+.venv-*/
+.tools/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.pyc
+dbt/herbintel/target/
+dbt/herbintel/logs/
+dbt/herbintel/dbt_packages/
+dbt/herbintel/.user.yml
+datasets/generated/
+artifacts/
